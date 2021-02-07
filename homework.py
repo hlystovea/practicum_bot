@@ -36,7 +36,8 @@ def parse_homework_status(homework):
     if homework.get('status') == 'rejected':
         verdict = 'К сожалению в работе нашлись ошибки.'
     else:
-        verdict = 'Ревьюеру всё понравилось, можно приступать к следующему уроку.'
+        verdict = ('Ревьюеру всё понравилось,'
+                   'можно приступать к следующему уроку.')
     return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
 
 
@@ -64,7 +65,7 @@ def main():
 
     bot_client = Bot(token=TELEGRAM_TOKEN)
 
-    current_timestamp = int(0)
+    current_timestamp = int(time.time())
 
     current_error = None
 
@@ -72,10 +73,12 @@ def main():
         try:
             new_homework = get_homework_statuses(current_timestamp)
             if new_homework.get('homeworks'):
-                send_message(
-                    parse_homework_status(
-                        new_homework.get('homeworks')[0]), bot_client)
-            current_timestamp = new_homework.get('current_date', current_timestamp)
+                text = parse_homework_status(new_homework.get('homeworks')[0])
+                send_message(text, bot_client)
+            current_timestamp = new_homework.get(
+                'current_date',
+                current_timestamp,
+                )
             time.sleep(300)
         except Exception as error:
             print(f'Бот столкнулся с ошибкой: {repr(error)}')
