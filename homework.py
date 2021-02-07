@@ -78,7 +78,7 @@ def main():
             current_timestamp = new_homework.get(
                 'current_date',
                 current_timestamp,
-                )
+            )
             time.sleep(300)
         except Exception as error:
             print(f'Бот столкнулся с ошибкой: {repr(error)}')
