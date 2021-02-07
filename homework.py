@@ -49,7 +49,7 @@ def get_homework_statuses(current_timestamp):
         'from_date': current_timestamp,
     }
     homework_statuses = requests.get(URL, headers=headers, params=params)
-    #homework_statuses.raise_for_status() - тесты не пускают с этой строкой,
+    # homework_statuses.raise_for_status() - тесты не пускают с этой строкой,
     # но ведь она работает отменно...
     return homework_statuses.json()
 
