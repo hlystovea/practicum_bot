@@ -115,7 +115,7 @@ def main():
             if new_homework.get('current_date'):
                 current_timestamp = new_homework.get('current_date')
             if new_homework.get('homeworks'):
-                comment = parse_homework_status(new_homework.get('homeworks')[0])
+                comment = parse_homework_status(new_homework.get('homeworks')[0]) # noqa
                 send_message(comment, bot_client)
             time.sleep(300)
         except Exception as error:
