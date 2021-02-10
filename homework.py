@@ -10,7 +10,11 @@ import telegram
 from dotenv import load_dotenv
 from telegram import Bot
 
-rotate_file_handler = RotatingFileHandler('log.log', maxBytes=5000000, backupCount=2)
+rotate_file_handler = RotatingFileHandler(
+    'log.log',
+    maxBytes=5000000,
+    backupCount=2,
+)
 console_out_hundler = logging.StreamHandler()
 logging.basicConfig(
     level=logging.INFO,
@@ -30,7 +34,7 @@ SMTP_LOGIN = os.environ.get('SMTP_LOGIN')
 SMTP_PASS = os.environ.get('SMTP_PASS')
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 TO_ADRESS = os.environ.get('TO_ADRESS')
-PRAKTIKUM_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/' # noqa
+PRAKTIKUM_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'  # noqa
 
 
 def parse_homework_status(homework):
@@ -41,7 +45,7 @@ def parse_homework_status(homework):
         elif homework.get('status') == 'reviewing':
             verdict = 'Работа взята в ревью.'
         elif homework.get('status') == 'approved':
-            verdict = 'Ревьюеру всё понравилось, можно приступать к следующему уроку.' #noqa
+            verdict = 'Ревьюеру всё понравилось, можно приступать к следующему уроку.'  # noqa
         else:
             verdict = 'Статус неизвестен.'
         return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
@@ -64,7 +68,7 @@ def get_homework_statuses(current_timestamp=0):
             params=params,
         )
         # homework_statuses.raise_for_status()
-        # ^-- тесты не пускают с этой строкой по причине имитации ответа сервера
+        # ^-- тесты не пускают с этой строкой из-за имитации ответа сервера
         return homework_statuses.json()
     except requests.exceptions.RequestException as error:
         logging.error(repr(error))
@@ -80,10 +84,14 @@ def send_message(message, bot_client):
         return bot_client.send_message(CHAT_ID, message)
     except telegram.TelegramError as error:
         logging.error(repr(error))
-        message = f'Бот не смог отправить сообщение в Telegram.\nТекст:\n{message}' # noqa
+        message = (
+            f'Бот столкнулся с ошибкой {repr(error)} '
+            f'при отправке сообщения в Telegram.\n'
+            f'Текст:\n{message}'
+        )
         send_mail(message, smtp_client)
         raise error
-        
+
 
 def send_mail(message, smtp_client):
     logging.info(f'Попытка отправки сообщения на e-mail. Текст: {message}')
@@ -113,9 +121,9 @@ def main():
         try:
             new_homework = get_homework_statuses(current_timestamp)
             if new_homework.get('current_date'):
-                current_timestamp = new_homework.get('current_date')
+                current_timestamp = new_homework['current_date']
             if new_homework.get('homeworks'):
-                comment = parse_homework_status(new_homework.get('homeworks')[0]) # noqa
+                comment = parse_homework_status(new_homework['homeworks'][0])
                 send_message(comment, bot_client)
             time.sleep(300)
         except Exception as error:
