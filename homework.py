@@ -2,6 +2,7 @@ import logging
 import os
 import smtplib
 import time
+from email.errors import MessageError
 from email.message import EmailMessage
 from logging.handlers import RotatingFileHandler
 
@@ -34,7 +35,7 @@ SMTP_LOGIN = os.environ.get('SMTP_LOGIN')
 SMTP_PASS = os.environ.get('SMTP_PASS')
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 TO_ADRESS = os.environ.get('TO_ADRESS')
-PRAKTIKUM_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'  # noqa
+API_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
 
 
 def parse_homework_status(homework):
@@ -45,7 +46,10 @@ def parse_homework_status(homework):
         elif homework.get('status') == 'reviewing':
             verdict = 'Работа взята в ревью.'
         elif homework.get('status') == 'approved':
-            verdict = 'Ревьюеру всё понравилось, можно приступать к следующему уроку.'  # noqa
+            verdict = (
+                'Ревьюеру всё понравилось, '
+                'можно приступать к следующему уроку.'
+            )
         else:
             verdict = 'Статус неизвестен.'
         return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
@@ -63,7 +67,7 @@ def get_homework_statuses(current_timestamp=0):
     }
     try:
         homework_statuses = requests.get(
-            PRAKTIKUM_HW_URL,
+            API_HW_URL,
             headers=headers,
             params=params,
         )
@@ -101,7 +105,7 @@ def send_mail(message, smtp_client):
         msg['Subject'] = 'api_sp1_bot'
         smtp_client.send_message(msg, FROM_ADRESS, TO_ADRESS)
         logging.info('Сообщение отправлено.')
-    except Exception as error:
+    except MessageError as error:
         logging.error(repr(error))
 
 
