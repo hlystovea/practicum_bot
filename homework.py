@@ -9,7 +9,6 @@ from logging.handlers import RotatingFileHandler
 from requests.exceptions import RequestException
 
 import requests
-import telegram
 from dotenv import load_dotenv
 from telegram import Bot, TelegramError
 
