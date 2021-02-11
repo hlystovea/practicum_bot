@@ -30,7 +30,7 @@ load_dotenv()
 
 
 CHAT_ID = os.environ['CHAT_ID']
-FROM_ADRESS = os.environ['FROM_ADRESS']
+FROM_ADRESS = os.environ.get('FROM_ADRESS')
 PRAKTIKUM_TOKEN = os.environ['PRAKTIKUM_TOKEN']
 SMTP_LOGIN = os.environ['SMTP_LOGIN']
 SMTP_PASS = os.environ['SMTP_PASS']
