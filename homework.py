@@ -30,12 +30,12 @@ load_dotenv()
 
 
 CHAT_ID = os.environ['CHAT_ID']
-FROM_ADRESS = os.environ.get('FROM_ADRESS')
+FROM_ADRESS = os.environ.get('FROM_ADRESS')  # get для прохождения тестов
 PRAKTIKUM_TOKEN = os.environ['PRAKTIKUM_TOKEN']
-SMTP_LOGIN = os.environ['SMTP_LOGIN']
-SMTP_PASS = os.environ['SMTP_PASS']
+SMTP_LOGIN = os.environ.get('SMTP_LOGIN')  # get для прохождения тестов
+SMTP_PASS = os.environ.get('SMTP_PASS')  # get для прохождения тестов
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
-TO_ADRESS = os.environ['TO_ADRESS']
+TO_ADRESS = os.environ.get('TO_ADRESS')  # get для прохождения тестов
 API_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
 
 
