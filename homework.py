@@ -43,9 +43,9 @@ SMTP_PORT = 587
 
 def parse_homework_status(homework: dict):
     verdicts = {
-        'reviewing': 'Работа взята в ревью.',
-        'rejected': 'К сожалению в работе нашлись ошибки.',
         'approved': 'Ревьюер принял проект.',
+        'rejected': 'К сожалению в работе нашлись ошибки.',
+        'reviewing': 'Работа взята в ревью.',
     }
     homework_name = homework.get('homework_name', 'Неизвестная работа')
     status = homework.get('status', 'unknown')
