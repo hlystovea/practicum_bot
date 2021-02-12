@@ -5,11 +5,11 @@ from email.errors import MessageError
 from email.message import EmailMessage
 from json import JSONDecodeError
 from logging.handlers import RotatingFileHandler
-from requests.exceptions import RequestException
 from smtplib import SMTP
 
 import requests
 from dotenv import load_dotenv
+from requests.exceptions import RequestException
 from telegram import Bot, TelegramError
 
 rotate_file_handler = RotatingFileHandler(
@@ -30,15 +30,15 @@ load_dotenv()
 
 
 CHAT_ID = os.environ['CHAT_ID']
-FROM_ADRESS = os.environ['FROM_ADRESS']
+TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 PRAKTIKUM_TOKEN = os.environ['PRAKTIKUM_TOKEN']
+FROM_ADRESS = os.environ['FROM_ADRESS']
+TO_ADRESS = os.environ['TO_ADRESS']
 SMTP_LOGIN = os.environ['SMTP_LOGIN']
 SMTP_PASS = os.environ['SMTP_PASS']
-TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
-TO_ADRESS = os.environ['TO_ADRESS']
-API_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
 SMTP_HOST = 'smtp.gmail.com'
 SMTP_PORT = 587
+API_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
 
 
 def parse_homework_status(homework: dict):
