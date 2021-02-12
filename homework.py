@@ -1,12 +1,12 @@
 import logging
 import os
-import smtplib
 import time
 from email.errors import MessageError
 from email.message import EmailMessage
 from json import JSONDecodeError
 from logging.handlers import RotatingFileHandler
 from requests.exceptions import RequestException
+from smtplib import SMTP
 
 import requests
 from dotenv import load_dotenv
@@ -30,118 +30,91 @@ load_dotenv()
 
 
 CHAT_ID = os.environ['CHAT_ID']
-FROM_ADRESS = os.environ.get('FROM_ADRESS')  # get для прохождения тестов
+FROM_ADRESS = os.environ['FROM_ADRESS']
 PRAKTIKUM_TOKEN = os.environ['PRAKTIKUM_TOKEN']
-SMTP_LOGIN = os.environ.get('SMTP_LOGIN')  # get для прохождения тестов
-SMTP_PASS = os.environ.get('SMTP_PASS')  # get для прохождения тестов
+SMTP_LOGIN = os.environ['SMTP_LOGIN']
+SMTP_PASS = os.environ['SMTP_PASS']
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
-TO_ADRESS = os.environ.get('TO_ADRESS')  # get для прохождения тестов
+TO_ADRESS = os.environ['TO_ADRESS']
 API_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
+SMTP_HOST = 'smtp.gmail.com'
+SMTP_PORT = 587
 
 
-def parse_homework_status(homework):
-    statuses = {
+def parse_homework_status(homework: dict):
+    verdicts = {
         'reviewing': 'Работа взята в ревью.',
         'rejected': 'К сожалению в работе нашлись ошибки.',
-        'approved': ('Ревьюеру всё понравилось, '
-                     'можно приступать к следующему уроку.'),
+        'approved': 'Ревьюер принял проект.',
     }
-    try:
-        homework_name = homework.get('homework_name', 'Неизвестная работа')
-        verdict = statuses.get(homework.get('status'), 'Статус неизвестен.')
-        return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
-    except AttributeError as error:
-        # на случай если функция используется где-то ещё и в неё
-        # может прилететь не словарь, а падать ей запрещено по ТЗ
-        logging.exception('')
-        raise error
+    homework_name = homework.get('homework_name', 'Неизвестная работа')
+    status = homework.get('status', 'unknown')
+    verdict = verdicts.get(status, 'Статус неизвестен.')
+    return f'Изменился статус работы "{homework_name}"!\n\n{verdict}'
 
 
-def get_homework_statuses(current_timestamp=0):
+def get_homework_statuses(current_timestamp: int=0):
     headers = {
         'Authorization': f'OAuth {PRAKTIKUM_TOKEN}',
     }
     params = {
         'from_date': current_timestamp,
     }
-    try:
-        homework_statuses = requests.get(
-            API_HW_URL,
-            headers=headers,
-            params=params,
-        )
-        # homework_statuses.raise_for_status()
-        # ^-- тесты не пускают с этой строкой из-за имитации ответа сервера
-        return homework_statuses.json()
-    except (RequestException, JSONDecodeError) as error:
-        # в учебных целях
-        logging.exception('')
-        raise error
+    homework_statuses = requests.get(API_HW_URL, headers=headers, params=params)
+    homework_statuses.raise_for_status()
+    return homework_statuses.json()
 
 
-def send_message(message, bot_client):
+def send_message(message: str):
     logging.info(f'Попытка отправки сообщения в Telegram. Текст: {message}')
     try:
-        return bot_client.send_message(CHAT_ID, message)
+        bot_client = Bot(token=TELEGRAM_TOKEN)
+        bot_client.send_message(CHAT_ID, message)
+        logging.info('Сообщение отправлено.')
     except TelegramError as error:
-        # в случае ошибки используем резервный канал связи
-        logging.exception('')
+        logging.error(repr(error))
         message = (
             f'Бот столкнулся с ошибкой {repr(error)} '
             f'при отправке сообщения в Telegram.\n'
             f'Текст:\n{message}'
         )
-        send_mail(message, smtp_client)
-        raise error
+        send_mail(message)
 
 
-def send_mail(message, smtp_client):
+def send_mail(message: str):
     logging.info(f'Попытка отправки сообщения на e-mail. Текст: {message}')
     try:
+        smtp_client = SMTP(SMTP_HOST, SMTP_PORT)
+        smtp_client.starttls()
+        smtp_client.login(SMTP_LOGIN, SMTP_PASS)
         msg = EmailMessage()
         msg.set_content(message)
         msg['Subject'] = 'api_sp1_bot'
         smtp_client.send_message(msg, FROM_ADRESS, TO_ADRESS)
         logging.info('Сообщение отправлено.')
-    except MessageError:
-        # только для логирования
-        logging.exception('')
+    except MessageError as error:
+        logging.error(repr(error))
 
 
 def main():
-    global smtp_client
-    smtp_client = smtplib.SMTP('smtp.gmail.com', 587)
-    smtp_client.starttls()
-    smtp_client.login(SMTP_LOGIN, SMTP_PASS)
-
-    bot_client = Bot(token=TELEGRAM_TOKEN)
-
     current_timestamp = int(time.time())
-
     current_error = None
-
     while True:
         try:
             new_homework = get_homework_statuses(current_timestamp)
-            current_timestamp = new_homework.get(
-                'current_date',
-                current_timestamp,
-            )
+            if new_homework.get('current_date'):
+                current_timestamp = new_homework['current_date']
             if new_homework.get('homeworks'):
-                comment = parse_homework_status(new_homework['homeworks'][0])
-                send_message(comment, bot_client)
+                homework = new_homework['homeworks'][0]
+                message = parse_homework_status(homework)
+                send_message(message)
             time.sleep(300)
-        except Exception as error:
-            # для вызова send_message() и обработки собственных ошибок
-            logging.exception('')
+        except (RequestException, JSONDecodeError) as error:
+            logging.error(repr(error))
             if not type(current_error) == type(error):
                 current_error = error
-                try:
-                    send_message(repr(error), bot_client)
-                except (TelegramError, MessageError):
-                    # для продолжения работы при ошибке отправки сообщения
-                    continue
-            time.sleep(5)
+                send_message(repr(error))
+            time.sleep(30)
 
 
 if __name__ == '__main__':
