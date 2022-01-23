@@ -58,7 +58,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
-            cd sayanbot
+            cd practicum_bot
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/practicum_bot:latest
             sudo docker-compose stop
             sudo docker-compose rm practicum_bot
