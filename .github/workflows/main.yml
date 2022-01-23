@@ -1,0 +1,84 @@
+name: Practicum_bot deploy
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build_and_push_to_docker_hub:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Docker 
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/practicum_bot:latest
+
+  copy_configs:
+    runs-on: ubuntu-latest
+    needs: build_and_push_to_docker_hub
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: copy start files via ssh password
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{  secrets.HOST }}
+          port: ${{ secrets.PORT }}
+          username: ${{ secrets.USER  }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          source: "docker-compose.yaml"
+          target: "~/practicum_bot"
+          overwrite: true
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: copy_configs
+    steps:
+      - name: executing remote ssh commands to deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          port: ${{ secrets.PORT }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            cd sayanbot
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/practicum_bot:latest
+            sudo docker-compose stop
+            sudo docker-compose rm practicum_bot
+            echo ADMIN_CHAT_ID=${{ secrets.ADMIN_CHAT_ID }} > .env
+            echo CHAT_ID=${{ secrets.CHAT_ID }} >> .env
+            echo TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
+            echo PRAKTIKUM_TOKEN=${{ secrets.PRAKTIKUM_TOKEN }} >> .env
+            echo FROM_ADRESS=${{ secrets.FROM_ADRESS }} >> .env
+            echo TO_ADRESS=${{ secrets.TO_ADRESS }} >> .env
+            echo SMTP_LOGIN=${{ secrets.SMTP_LOGIN }} >> .env
+            echo SMTP_PASS=${{ secrets.SMTP_PASS }} >> .env
+            sudo docker-compose up -d
+
+  send_message:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+    - name: send message
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.ADMIN_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: ${{ github.workflow }} completed successfully!

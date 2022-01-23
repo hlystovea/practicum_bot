@@ -1,5 +1,5 @@
 import logging
-import os
+from os import environ
 import time
 from email.errors import MessageError
 from email.message import EmailMessage
@@ -8,9 +8,8 @@ from logging.handlers import RotatingFileHandler
 from smtplib import SMTP
 
 import requests
-from dotenv import load_dotenv
 from requests.exceptions import RequestException
-from telegram import Bot, TelegramError
+
 
 rotate_file_handler = RotatingFileHandler(
     'log.log',
@@ -26,24 +25,23 @@ logging.basicConfig(
 
 logging.debug('Start script')
 
-load_dotenv()
 
-
-CHAT_ID = os.environ['CHAT_ID']
-TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
-PRAKTIKUM_TOKEN = os.environ['PRAKTIKUM_TOKEN']
-FROM_ADRESS = os.environ['FROM_ADRESS']
-TO_ADRESS = os.environ['TO_ADRESS']
-SMTP_LOGIN = os.environ['SMTP_LOGIN']
-SMTP_PASS = os.environ['SMTP_PASS']
+ADMIN_CHAT_ID = int(environ['ADMIN_CHAT_ID'])
+CHAT_ID = int(environ['CHAT_ID'])
+TELEGRAM_TOKEN = environ['TELEGRAM_TOKEN']
+PRAKTIKUM_TOKEN = environ['PRAKTIKUM_TOKEN']
+FROM_ADRESS = environ['FROM_ADRESS']
+TO_ADRESS = environ['TO_ADRESS']
+SMTP_LOGIN = environ['SMTP_LOGIN']
+SMTP_PASS = environ['SMTP_PASS']
 SMTP_HOST = 'smtp.gmail.com'
 SMTP_PORT = 587
-API_HW_URL = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
+API_HW_URL = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 
 
 def parse_homework_status(homework: dict):
     verdicts = {
-        'approved': 'Ревьюер принял проект.',
+        'approved': 'Ревьюеру всё понравилось, можно приступать к следующему уроку.',  # noqa (E501)
         'rejected': 'К сожалению в работе нашлись ошибки.',
         'reviewing': 'Работа взята в ревью.',
     }
@@ -53,25 +51,38 @@ def parse_homework_status(homework: dict):
     return f'Изменился статус работы "{homework_name}"!\n\n{verdict}'
 
 
-def get_homework_statuses(current_timestamp: int=0):
+def get_homework_statuses(current_timestamp: int = 0):
     headers = {
         'Authorization': f'OAuth {PRAKTIKUM_TOKEN}',
     }
     params = {
         'from_date': current_timestamp,
     }
-    homework_statuses = requests.get(API_HW_URL, headers=headers, params=params)
+    homework_statuses = requests.get(
+        API_HW_URL, headers=headers, params=params
+    )
     homework_statuses.raise_for_status()
     return homework_statuses.json()
 
 
-def send_message(message: str):
+def send_message(chat_id: int, message: str):
     logging.info(f'Попытка отправки сообщения в Telegram. Текст: {message}')
     try:
-        bot_client = Bot(token=TELEGRAM_TOKEN)
-        bot_client.send_message(CHAT_ID, message)
-        logging.info('Сообщение отправлено.')
-    except TelegramError as error:
+        url = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage'
+        params = {
+            'chat_id': chat_id,
+            'text':  message,
+        }
+        r = requests.get(url=url, params=params)
+        if r.status_code != 200:
+            message = (
+                'Не удалось отправить сообщение в телеграм. '
+                f'Ошибка: {r.json().get("description")}'
+            )
+            send_mail(message)
+        else:
+            logging.info('Сообщение отправлено.')
+    except ConnectionError as error:
         logging.error(repr(error))
         message = (
             f'Бот столкнулся с ошибкой {repr(error)} '
@@ -89,7 +100,7 @@ def send_mail(message: str):
         smtp_client.login(SMTP_LOGIN, SMTP_PASS)
         msg = EmailMessage()
         msg.set_content(message)
-        msg['Subject'] = 'api_sp1_bot'
+        msg['Subject'] = 'Яндекс.Практикум'
         smtp_client.send_message(msg, FROM_ADRESS, TO_ADRESS)
         logging.info('Сообщение отправлено.')
     except MessageError as error:
@@ -97,7 +108,7 @@ def send_mail(message: str):
 
 
 def main():
-    current_timestamp = int(time.time())
+    current_timestamp = 0 # int(time.time())
     current_error = None
     while True:
         try:
@@ -107,13 +118,13 @@ def main():
             if new_homework.get('homeworks'):
                 homework = new_homework['homeworks'][0]
                 message = parse_homework_status(homework)
-                send_message(message)
+                send_message(CHAT_ID, message)
             time.sleep(300)
         except (RequestException, JSONDecodeError) as error:
             logging.error(repr(error))
             if not type(current_error) == type(error):
                 current_error = error
-                send_message(repr(error))
+                send_message(ADMIN_CHAT_ID, repr(error))
             time.sleep(30)
 
 
