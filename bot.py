@@ -111,7 +111,7 @@ def send_mail(message: str):
 
 
 def main():
-    current_timestamp = 0  # int(time.time())
+    current_timestamp = int(time.time())
     current_error = None
     while True:
         try:
