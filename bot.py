@@ -69,11 +69,14 @@ def send_message(chat_id: int, message: str):
     logging.info(f'Попытка отправки сообщения в Telegram. Текст: {message}')
     try:
         url = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage'
-        params = {
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+        data = {
             'chat_id': chat_id,
             'text':  message,
         }
-        r = requests.get(url=url, params=params)
+        r = requests.get(url=url, headers=headers, data=data)
         if r.status_code != 200:
             message = (
                 'Не удалось отправить сообщение в телеграм. '
