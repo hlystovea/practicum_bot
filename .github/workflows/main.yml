@@ -61,14 +61,13 @@ jobs:
             cd practicum_bot
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/practicum_bot:latest
             sudo docker-compose stop
-            sudo docker-compose rm practicum_bot
+            sudo docker-compose rm bot y
             echo ADMIN_CHAT_ID=${{ secrets.ADMIN_CHAT_ID }} > .env
             echo CHAT_ID=${{ secrets.CHAT_ID }} >> .env
-            echo TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
+            echo BOT_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
             echo PRAKTIKUM_TOKEN=${{ secrets.PRAKTIKUM_TOKEN }} >> .env
             echo FROM_ADRESS=${{ secrets.FROM_ADRESS }} >> .env
             echo TO_ADRESS=${{ secrets.TO_ADRESS }} >> .env
-            echo SMTP_LOGIN=${{ secrets.SMTP_LOGIN }} >> .env
             echo SMTP_PASS=${{ secrets.SMTP_PASS }} >> .env
             sudo docker-compose up -d
 
