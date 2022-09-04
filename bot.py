@@ -9,6 +9,7 @@ from notifiers import get_notifier
 from notifiers.logging import NotificationHandler
 from requests.exceptions import RequestException
 
+
 ADMIN_CHAT_ID = int(environ['ADMIN_CHAT_ID'])
 CHAT_ID = int(environ['CHAT_ID'])
 BOT_TOKEN = environ['BOT_TOKEN']
