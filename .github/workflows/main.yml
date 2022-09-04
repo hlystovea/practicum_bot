@@ -61,7 +61,7 @@ jobs:
             cd practicum_bot
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/practicum_bot:latest
             sudo docker-compose stop
-            sudo docker-compose rm bot y
+            yes | sudo docker-compose rm bot
             echo ADMIN_CHAT_ID=${{ secrets.ADMIN_CHAT_ID }} > .env
             echo CHAT_ID=${{ secrets.CHAT_ID }} >> .env
             echo BOT_TOKEN=${{ secrets.TELEGRAM_TOKEN }} >> .env
