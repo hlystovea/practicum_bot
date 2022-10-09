@@ -1,11 +1,11 @@
 import time
-from json import JSONDecodeError
 from os import environ
 
 import requests
-from logger import logger
 from notifiers import get_notifier
-from requests.exceptions import RequestException
+from requests.exceptions import JSONDecodeError, RequestException
+
+from logger import logger
 
 ADMIN_CHAT_ID = int(environ['ADMIN_CHAT_ID'])
 CHAT_ID = int(environ['CHAT_ID'])
@@ -56,7 +56,7 @@ def send_message(chat_id: int, message: str):
 
 
 def main():
-    current_timestamp = 1665279199
+    current_timestamp = int(time.time())
     current_error = None
     while True:
         try:
