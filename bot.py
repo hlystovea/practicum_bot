@@ -1,54 +1,17 @@
-import logging
-from os import environ
 import time
 from json import JSONDecodeError
-from logging.handlers import RotatingFileHandler
+from os import environ
 
 import requests
+from logger import logger
 from notifiers import get_notifier
-from notifiers.logging import NotificationHandler
 from requests.exceptions import RequestException
-
 
 ADMIN_CHAT_ID = int(environ['ADMIN_CHAT_ID'])
 CHAT_ID = int(environ['CHAT_ID'])
 BOT_TOKEN = environ['BOT_TOKEN']
 PRAKTIKUM_TOKEN = environ['PRAKTIKUM_TOKEN']
-FROM_ADRESS = environ['FROM_ADRESS']
-TO_ADRESS = environ['TO_ADRESS']
-SMTP_PASS = environ['SMTP_PASS']
 API_HW_URL = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-
-
-rotate_file_handler = RotatingFileHandler(
-    'log.log',
-    maxBytes=5000000,
-    backupCount=2,
-)
-console_out_hundler = logging.StreamHandler()
-notification_handler = NotificationHandler(
-    'gmail',
-    defaults={
-        'subject': 'Яндекс.Практикум',
-        'from': FROM_ADRESS,
-        'to': TO_ADRESS,
-        'username': FROM_ADRESS,
-        'password': SMTP_PASS,
-        'host': 'smtp.gmail.com',
-        'port': 587,
-        'tls': True,
-        'ssl': False,
-        'html': False
-    }
-)
-notification_handler.setLevel(logging.ERROR)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(funcName)s: %(message)s',
-    handlers=[rotate_file_handler, console_out_hundler, notification_handler],
-)
-
-logging.debug('Start script')
 
 
 gmail = get_notifier('gmail')
@@ -82,18 +45,18 @@ def get_homework_statuses(current_timestamp: int = 0):
 
 
 def send_message(chat_id: int, message: str):
-    logging.info(f'Попытка отправки сообщения в Telegram. Текст: {message}')
+    logger.debug(f'Попытка отправки сообщения в Telegram. Текст: {message}')
     msg = telegram.notify(message=message, chat_id=chat_id, token=BOT_TOKEN)
     if msg.status != 'Success':
         error_message = f'Не удалось отправить сообщение:\n\n"{message}"\n\n'\
                         f'Ошибки: {", ".join(msg.errors)}'
-        logging.error(error_message)
+        logger.error(error_message)
     else:
-        logging.info('Сообщение отправлено.')
+        logger.debug('Сообщение отправлено.')
 
 
 def main():
-    current_timestamp = int(time.time())
+    current_timestamp = 1665279199
     current_error = None
     while True:
         try:
@@ -106,7 +69,7 @@ def main():
                 send_message(CHAT_ID, message)
             time.sleep(300)
         except (RequestException, JSONDecodeError) as error:
-            logging.warning(repr(error))
+            logger.warning(repr(error))
             if not type(current_error) == type(error):
                 current_error = error
                 send_message(ADMIN_CHAT_ID, repr(error))
