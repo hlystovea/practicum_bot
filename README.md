@@ -1,3 +1,5 @@
+[![Practicum_bot deploy](https://github.com/hlystovea/practicum_bot/actions/workflows/main.yml/badge.svg)](https://github.com/hlystovea/practicum_bot/actions/workflows/main.yml)
+
 # Practicum_bot (Телеграм бот)
 
 ### Описание
