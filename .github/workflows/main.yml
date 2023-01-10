@@ -57,6 +57,7 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
             cd practicum_bot
+            sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} ${{ secrets.DOCKER_HUB }}
             sudo docker pull ${{ secrets.DOCKER_HUB }}/practicum_bot:latest
             sudo docker-compose stop
             yes | sudo docker-compose rm bot
