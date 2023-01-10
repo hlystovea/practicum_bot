@@ -1,4 +1,4 @@
-name: Practicum_bot deploy
+name: Practicum bot deploy
 
 on:
   push:
@@ -16,13 +16,14 @@ jobs:
       - name: Login to Docker 
         uses: docker/login-action@v2
         with:
+          registry: ${{ secrets.DOCKER_HUB }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Push to Docker Hub
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/practicum_bot:latest
+          tags: ${{ secrets.DOCKER_HUB }}/practicum_bot:latest
 
   copy_configs:
     runs-on: ubuntu-latest
@@ -56,7 +57,7 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
             cd practicum_bot
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/practicum_bot:latest
+            sudo docker pull ${{ secrets.DOCKER_HUB }}/practicum_bot:latest
             sudo docker-compose stop
             yes | sudo docker-compose rm bot
             echo ADMIN_CHAT_ID=${{ secrets.ADMIN_CHAT_ID }} > .env
@@ -66,6 +67,7 @@ jobs:
             echo FROM_ADRESS=${{ secrets.FROM_ADRESS }} >> .env
             echo TO_ADRESS=${{ secrets.TO_ADRESS }} >> .env
             echo SMTP_PASS=${{ secrets.SMTP_PASS }} >> .env
+            echo DOCKER_HUB=${{ secrets.DOCKER_HUB }} >> .env
             sudo docker-compose up -d
 
   send_message:

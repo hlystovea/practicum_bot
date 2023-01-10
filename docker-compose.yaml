@@ -2,7 +2,7 @@ version: '3.3'
 
 services:
   bot:
-    image: hlystovea/practicum_bot:latest
+    image: "${DOCKER_HUB}/practicum_bot:latest"
     container_name: practicum_bot
     restart: always
     command: python3 bot.py
